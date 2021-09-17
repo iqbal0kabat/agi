@@ -70,5 +70,26 @@ func buildFilter(
 			return (cmd.CmdFlags().IsExecutedDraw() && len(idx) > 1) || cmd.CmdFlags().IsSubmission()
 		})
 	}
+	if f.GetSuppressHostCommands() {
+		filters = append(filters, func(id api.CmdID, cmd api.Cmd, s *api.GlobalState, idx api.SubCmdIdx) bool {
+			return cmd.CmdFlags().IsSubmission() || cmd.CmdFlags().IsEndOfFrame() || len(idx) > 1
+		})
+	}
+	if f.GetSuppressBeginEndMarkers() {
+		filters = append(filters, func(id api.CmdID, cmd api.Cmd, s *api.GlobalState, idx api.SubCmdIdx) bool {
+			return !(cmd.CmdFlags().IsPushUserMarker() || cmd.CmdFlags().IsPopUserMarker() || cmd.CmdFlags().IsUserMarker() || cmd.CmdFlags().IsBeginEndRenderpass() || cmd.CmdFlags().IsBeginEndTransformFeedback())
+		})
+	}
+	if f.GetSuppressNonRenderpassCommands() {
+		filters = append(filters, func(id api.CmdID, cmd api.Cmd, s *api.GlobalState, idx api.SubCmdIdx) bool {
+			return len(idx) < 2 || cmd.CmdFlags().IsExecutedDraw() || cmd.CmdFlags().IsSyncCommand()
+		})
+	}
+	if f.GetSuppressDeviceSideSyncCommands() {
+		filters = append(filters, func(id api.CmdID, cmd api.Cmd, s *api.GlobalState, idx api.SubCmdIdx) bool {
+			return !(cmd.CmdFlags().IsSyncCommand() && len(idx) > 1)
+		})
+	}
+
 	return filters.All, nil
 }
